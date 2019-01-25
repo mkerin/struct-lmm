@@ -2,7 +2,8 @@
 # Does not include centering options
 
 
-from chiscore import davies_pvalue, mod_liu, optimal_davies_pvalue
+from chiscore import davies_pvalue, optimal_davies_pvalue
+from struct_lmm.utils import mod_liu_corrected
 
 
 def P(gp, M):
@@ -224,7 +225,11 @@ class StructLMM(object):
             xoL = X * L
             PxoL = P(self.gp, xoL)
             LToxPxoL = 0.5 * sp.dot(xoL.T, PxoL)
-            pval = davies_pvalue(Q_rho[0], LToxPxoL)
+            try:
+                pval = davies_pvalue(Q_rho[0], LToxPxoL)
+            except AssertionError:
+                eighQ, UQ = la.eigh(LToxPxoL)
+                pval = mod_liu_corrected(Q_rho[0], eighQ)
             # Script ends here for interaction test
             return pval
         # or if we consider multiple values of rho i.e. equivalent to SKAT-O and used for association test
@@ -239,7 +244,7 @@ class StructLMM(object):
                 PxoL = P(self.gp, xoL)
                 LToxPxoL = 0.5 * sp.dot(xoL.T, PxoL)
                 eighQ, UQ = la.eigh(LToxPxoL)
-                pliumod[i,] = mod_liu(Q_rho[i], eighQ)
+                pliumod[i,] = mod_liu_corrected(Q_rho[i], eighQ)
             T = pliumod[:, 0].min()
             # if optimal_rho == 0.999:
             #    optimal_rho = 1
