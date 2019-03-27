@@ -57,7 +57,7 @@ def run_structlmm(
     """
     import pandas as pd
     import geno_sugar as gs
-    import geno_sugar.preprocess as prep
+    import struct_lmm.geno_sugar.geno_sugar.preprocess as prep
     from sklearn.impute import SimpleImputer
     import scipy as sp
 
@@ -82,12 +82,18 @@ def run_structlmm(
 
     # define geno preprocessing function
     prep_steps = []
-    # 1. missing values
+    # 1a. missing values
     if "max_miss" in snp_preproc:
         max_miss = snp_preproc["max_miss"]
         assert type(max_miss) == float, "max_miss should be a float"
         assert max_miss >= 0 and max_miss <= 1, "max_miss should be in [0, 1]"
         prep_steps.append(prep.filter_by_missing(max_miss=max_miss))
+    # 1b. Filter samples with missing data
+    if "incl_samples" in snp_preproc:
+        incl_samples = snp_preproc["incl_samples"]
+        assert isinstance(incl_samples, np.ndarray), "incl_samples should be np.array"
+        assert max_miss >= 0 and max_miss <= 1, "max_miss should be in [0, 1]"
+        prep_steps.append(prep.filter_samples(incl_samples))
     # 2. impute
     imputer = SimpleImputer(missing_values=sp.nan, strategy="mean")
     prep_steps.append(prep.impute(imputer))
@@ -97,7 +103,7 @@ def run_structlmm(
         assert type(min_maf) == float, "min_maf should be a float"
         assert min_maf >= 0 and min_maf <= 1, "min_maf should be in [0, 1]"
         prep_steps.append(prep.filter_by_maf(min_maf=min_maf))
-    # 2. standardize
+    # 4. standardize
     prep_steps.append(prep.standardize())
     preprocess = gs.preprocess.compose(prep_steps)
 
